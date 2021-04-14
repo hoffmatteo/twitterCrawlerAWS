@@ -1,4 +1,10 @@
 package com.oth;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.PutObjectResult;
@@ -10,16 +16,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 
-public class BucketAccess {
-    public static final String PREFIX = "stream2file";
-    public static final String SUFFIX = ".jpg";
+class BucketAccess {
+    private static final String PREFIX = "stream2file";
+    private static final String SUFFIX = ".jpg";
+    private static AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+    private static DynamoDB dynamoDB = new DynamoDB(client);
 
 
-    public static void upload(ArrayList<String> urlList, ArrayList<String> mediaKeyList, String hashtag) {
+
+    static void upload(ArrayList<String> urlList, ArrayList<String> mediaKeyList, String hashtag) {
         String bucket_name = "twitterimagesoth";
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().build();
+        addToDynamo();
+
 
 
         for(int i = 0; i < mediaKeyList.size(); i++) {
@@ -50,5 +62,25 @@ public class BucketAccess {
                 e.printStackTrace();
             }
         }
+    }
+
+    private static void addToDynamo() {
+        Table table = dynamoDB.getTable("twitterimageDatabase");
+        QuerySpec spec = new QuerySpec()
+                .withKeyConditionExpression("Hashtag = :hashtag")
+                .withValueMap(new ValueMap()
+                        .withString(":hashtag", "dogs"));
+
+        ItemCollection<QueryOutcome> items = table.query(spec);
+
+        Iterator<Item> iterator = items.iterator();
+        Item item = null;
+        while (iterator.hasNext()) {
+            item = iterator.next();
+            System.out.println(item.toJSONPretty());
+        }
+
+
+
     }
 }

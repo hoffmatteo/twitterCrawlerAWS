@@ -1,18 +1,13 @@
 package com.oth;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.amazonaws.services.s3.model.Bucket;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -24,14 +19,9 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import com.oth.BucketAccess;
-
 
 
 public class Main {
-
-    // To set your enviornment variables in your terminal run the following line:
-    // export 'BEARER_TOKEN'='<your_bearer_token>'
 
 
     public static void main(String args[]) throws IOException, URISyntaxException {
@@ -40,7 +30,6 @@ public class Main {
         search("dogs", bearerToken);
         //SQSAccess.accessQueue();
         //BucketAccess.upload();
-
     }
 
     /*
@@ -56,33 +45,27 @@ public class Main {
                     .setCookieSpec(CookieSpecs.STANDARD).build())
                     .build();
 
-
             URIBuilder uriBuilder = new URIBuilder("https://api.twitter.com/2/tweets/search/recent");
             System.out.println(uriBuilder.toString());
             ArrayList<NameValuePair> queryParameters;
+            //Query Parameters for the Twitter API, defines the search term, restrictions and expansions (for more information)
             queryParameters = new ArrayList<>();
             queryParameters.add(new BasicNameValuePair("query", "#" + searchString + " has:images -is:retweet -is:quote"));
             queryParameters.add(new BasicNameValuePair("expansions", "attachments.media_keys"));
             queryParameters.add(new BasicNameValuePair("media.fields", "url"));
             queryParameters.add(new BasicNameValuePair("max_results", "10"));
 
+            //Twitter APi returns 1-100 tweets at a time
             if (numTweets != 0) {
                 queryParameters.add(new BasicNameValuePair("next_token", getNextToken(searchResponse)));
 
             }
-
-
-            System.out.println(queryParameters);
-
-
             uriBuilder.addParameters(queryParameters);
-
 
             HttpGet httpGet = new HttpGet(uriBuilder.build());
             httpGet.setHeader("Authorization", String.format("Bearer %s", bearerToken));
             httpGet.setHeader("Content-Type", "application/json");
             System.out.println(httpGet.toString());
-
 
             HttpResponse response = httpClient.execute(httpGet);
             HttpEntity entity = response.getEntity();
@@ -97,7 +80,7 @@ public class Main {
         }
     }
 
-    static private void getPicture(String line, String hashtag) throws MalformedURLException {
+    private static void getPicture(String line, String hashtag) throws MalformedURLException {
         String regexURL = "https://pbs.twimg.com/media/*[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
         String regexMediaKey = "[0-9]*_[0-9]*\",\"type\":\"photo\"";
         String regexSplit = "\",\"type\":\"photo\",\"url\":\"";
@@ -115,24 +98,18 @@ public class Main {
                     urlMatcher.end(0)));
         }
 
-        for(String currLine : lineList) {
+        for (String currLine : lineList) {
             temp = currLine.split(regexSplit);
             System.out.println(Arrays.toString(temp));
             mediaKeyList.add(temp[0]);
             urlList.add(temp[1]);
         }
 
-        System.out.println(urlList);
-        System.out.println(mediaKeyList);
-
         BucketAccess.upload(urlList, mediaKeyList, hashtag);
-
-
-
     }
 
 
-    public static String getNextToken(String line) {
+    private static String getNextToken(String line) {
         String regex = "\"next_token\":\"*[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
         Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
         Matcher tokenMatcher = pattern.matcher(line);
@@ -143,8 +120,6 @@ public class Main {
             System.out.println(result);
         }
         return result;
-
-
     }
 
 }
