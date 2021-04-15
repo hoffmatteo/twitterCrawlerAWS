@@ -103,6 +103,8 @@ public class Main {
             System.out.println(Arrays.toString(temp));
             mediaKeyList.add(temp[0]);
             urlList.add(temp[1]);
+
+            //SQSAccess.insertQueue();
         }
 
         BucketAccess.upload(urlList, mediaKeyList, hashtag);
