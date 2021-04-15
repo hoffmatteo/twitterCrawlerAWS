@@ -16,7 +16,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 class BucketAccess {
     private static final String PREFIX = "stream2file";
@@ -30,17 +32,13 @@ class BucketAccess {
         String bucket_name = "twitterimagesoth";
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().build();
-        addToDynamo();
 
 
 
         for(int i = 0; i < mediaKeyList.size(); i++) {
             try (InputStream in = new URL(urlList.get(i)).openStream()) {
-                //Files.copy(in, Paths.get("C:/users/mattf/testImages/" + hashtag + "/" + mediaKeyList.get(i) + ".jpg"));
-                //Files.copy(in, Paths.get("C:/users/mattf/testImages/" + mediaKeyList.get(i) + ".jpg"));
-
-                //Files.copy(in, Paths.get("/home/ec2-user/images/" + hashtag + "/" + mediaKeyList.get(i) + ".jpg"));
                 final File tempFile = File.createTempFile(PREFIX, SUFFIX);
+
 
                 try (FileOutputStream out = new FileOutputStream(tempFile)) {
                     IOUtils.copy(in, out);
@@ -48,6 +46,8 @@ class BucketAccess {
                 try {
                     PutObjectResult result = s3.putObject(bucket_name, hashtag + "/" + mediaKeyList.get(i), tempFile);
                     //insert hashtag/image2 into dynamodb as value
+
+                    addToDynamo(hashtag, mediaKeyList.get(i));
 
                     if(!tempFile.delete()) {
                         System.out.println("Couldn't delete file!");
@@ -64,23 +64,11 @@ class BucketAccess {
         }
     }
 
-    private static void addToDynamo() {
+    private static void addToDynamo(String hashtag, String media_key) {
         Table table = dynamoDB.getTable("twitterimageDatabase");
-        QuerySpec spec = new QuerySpec()
-                .withKeyConditionExpression("Hashtag = :hashtag")
-                .withValueMap(new ValueMap()
-                        .withString(":hashtag", "dogs"));
+        Item item = new Item().withPrimaryKey("Hashtag", hashtag).withString("S3 Storage", "S3://" + hashtag + "/" + media_key);
 
-        ItemCollection<QueryOutcome> items = table.query(spec);
-
-        Iterator<Item> iterator = items.iterator();
-        Item item = null;
-        while (iterator.hasNext()) {
-            item = iterator.next();
-            System.out.println(item.toJSONPretty());
-        }
-
-
+        table.putItem(item);
 
     }
 }
