@@ -27,7 +27,7 @@ public class Main {
     public static void main(String[] args) throws IOException, URISyntaxException {
         String bearerToken = "";
         //Replace the search term with a term of your choice
-        search("cats", bearerToken);
+        search("nba", bearerToken);
     }
 
     /*

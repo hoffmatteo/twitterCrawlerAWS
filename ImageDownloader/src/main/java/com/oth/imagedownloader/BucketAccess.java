@@ -83,8 +83,7 @@ class BucketAccess {
     }
 
     public static void checkQueue() {
-        int count = 0;
-        while (count < 10) {
+        while (true) {
             try {
                 ReceiveMessageRequest messageRequest = new ReceiveMessageRequest().withMessageAttributeNames("media_key", "curr_hashtag").withQueueUrl(queue_url).withWaitTimeSeconds(20);
                 List<Message> messages = sqs.receiveMessage(messageRequest).getMessages();
@@ -106,7 +105,6 @@ class BucketAccess {
                 }
 
                 upload(urlList, mediakeyList, hashtag);
-                count++;
             } catch (Exception e) {
                 e.printStackTrace();
             }
