@@ -1,13 +1,5 @@
 package com.oth;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -19,6 +11,14 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class Main {
@@ -74,13 +74,13 @@ public class Main {
                 searchResponse = EntityUtils.toString(entity, "UTF-8");
                 System.out.println(searchResponse);
                 numTweets += 10;
-                getPicture(searchResponse, searchString);
+                getPicture(searchResponse, searchString, numTweets);
 
             }
         }
     }
 
-    private static void getPicture(String line, String hashtag) throws MalformedURLException {
+    private static void getPicture(String line, String hashtag, int numPictures) throws MalformedURLException {
         String regexURL = "https://pbs.twimg.com/media/*[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
         String regexMediaKey = "[0-9]*_[0-9]*\",\"type\":\"photo\"";
         String regexSplit = "\",\"type\":\"photo\",\"url\":\"";
@@ -93,7 +93,7 @@ public class Main {
         ArrayList<String> lineList = new ArrayList<String>();
         String[] temp;
 
-        while (urlMatcher.find()) {
+        while (urlMatcher.find() && lineList.size() <= numPictures) {
             lineList.add(line.substring(urlMatcher.start(0),
                     urlMatcher.end(0)));
         }
@@ -104,10 +104,11 @@ public class Main {
             mediaKeyList.add(temp[0]);
             urlList.add(temp[1]);
 
-            //SQSAccess.insertQueue();
+            SQSAccess.insertQueue(temp[1], temp[0], hashtag);
         }
 
-        BucketAccess.upload(urlList, mediaKeyList, hashtag);
+        BucketAccess.checkQueue();
+
     }
 
 
