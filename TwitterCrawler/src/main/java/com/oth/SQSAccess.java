@@ -26,18 +26,7 @@ public class SQSAccess {
 
 
     public static void insertQueue(String url, String media_key, String hashtag) {
-        /*if(media_key == null){
-            SendMessageRequest send_msg_request = new SendMessageRequest()
-                    .withQueueUrl(queue_url)
-                    .withMessageBody(hashtag)
-                    .withMessageGroupId("hashtag");
-            sqs.sendMessage(send_msg_request);
 
-        }
-        else {
-        */
-
-        System.out.println(hashtag);
 
         SendMessageRequest send_msg_request = new SendMessageRequest()
                 .withQueueUrl(queue_url)
@@ -46,7 +35,7 @@ public class SQSAccess {
                 .addMessageAttributesEntry("curr_hashtag", new MessageAttributeValue().withDataType("String").withStringValue(hashtag))
                 .addMessageAttributesEntry("media_key", new MessageAttributeValue().withDataType("String").withStringValue(media_key));
 
-        sqs.sendMessage(send_msg_request);
+        System.out.println(sqs.sendMessage(send_msg_request).getSequenceNumber());
     }
 
 

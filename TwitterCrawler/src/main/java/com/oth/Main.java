@@ -24,12 +24,10 @@ import java.util.regex.Pattern;
 public class Main {
 
 
-    public static void main(String args[]) throws IOException, URISyntaxException {
+    public static void main(String[] args) throws IOException, URISyntaxException {
         String bearerToken = "";
         //Replace the search term with a term of your choice
-        search("dogs", bearerToken);
-        //SQSAccess.accessQueue();
-        //BucketAccess.upload();
+        search("cats", bearerToken);
     }
 
     /*
@@ -88,12 +86,12 @@ public class Main {
         Pattern pattern = Pattern.compile(entireLine, Pattern.CASE_INSENSITIVE);
 
         Matcher urlMatcher = pattern.matcher(line);
-        ArrayList<String> urlList = new ArrayList<String>();
-        ArrayList<String> mediaKeyList = new ArrayList<String>();
+        //ArrayList<String> urlList = new ArrayList<String>();
+        //ArrayList<String> mediaKeyList = new ArrayList<String>();
         ArrayList<String> lineList = new ArrayList<String>();
         String[] temp;
 
-        while (urlMatcher.find() && lineList.size() <= numPictures) {
+        while (urlMatcher.find() && lineList.size() < numPictures) {
             lineList.add(line.substring(urlMatcher.start(0),
                     urlMatcher.end(0)));
         }
@@ -101,13 +99,12 @@ public class Main {
         for (String currLine : lineList) {
             temp = currLine.split(regexSplit);
             System.out.println(Arrays.toString(temp));
-            mediaKeyList.add(temp[0]);
-            urlList.add(temp[1]);
+            //mediaKeyList.add(temp[0]);
+            //urlList.add(temp[1]);
 
             SQSAccess.insertQueue(temp[1], temp[0], hashtag);
         }
 
-        BucketAccess.checkQueue();
 
     }
 

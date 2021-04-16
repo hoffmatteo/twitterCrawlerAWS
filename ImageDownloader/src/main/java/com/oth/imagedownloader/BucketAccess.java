@@ -1,4 +1,4 @@
-package com.oth;
+package com.oth.imagedownloader;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -33,6 +33,10 @@ class BucketAccess {
     private static final String QUEUE_NAME = "TestQueue.fifo";
     private static final AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
     private static final String queue_url = sqs.getQueueUrl(QUEUE_NAME).getQueueUrl();
+
+    public static void main(String[] args) {
+        checkQueue();
+    }
 
 
     static void upload(ArrayList<String> urlList, ArrayList<String> mediaKeyList, String hashtag) {
