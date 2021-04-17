@@ -23,6 +23,9 @@ import java.util.regex.Pattern;
 
 public class Main {
 
+    private static final int maxImages = 10;
+    private static final int numImages = 10;
+
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         String bearerToken = "";
@@ -37,21 +40,20 @@ public class Main {
         String searchResponse = null;
         int numTweets = 0;
 
-        while (numTweets < 10) {
+        while (numTweets < maxImages) {
 
             HttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(RequestConfig.custom()
                     .setCookieSpec(CookieSpecs.STANDARD).build())
                     .build();
 
             URIBuilder uriBuilder = new URIBuilder("https://api.twitter.com/2/tweets/search/recent");
-            System.out.println(uriBuilder.toString());
             ArrayList<NameValuePair> queryParameters;
             //Query Parameters for the Twitter API, defines the search term, restrictions and expansions (for more information)
             queryParameters = new ArrayList<>();
             queryParameters.add(new BasicNameValuePair("query", "#" + searchString + " has:images -is:retweet -is:quote"));
             queryParameters.add(new BasicNameValuePair("expansions", "attachments.media_keys"));
             queryParameters.add(new BasicNameValuePair("media.fields", "url"));
-            queryParameters.add(new BasicNameValuePair("max_results", "10"));
+            queryParameters.add(new BasicNameValuePair("max_results", Integer.toString(numImages)));
 
             //Twitter APi returns 1-100 tweets at a time
             if (numTweets != 0) {
@@ -63,22 +65,20 @@ public class Main {
             HttpGet httpGet = new HttpGet(uriBuilder.build());
             httpGet.setHeader("Authorization", String.format("Bearer %s", bearerToken));
             httpGet.setHeader("Content-Type", "application/json");
-            System.out.println(httpGet.toString());
 
             HttpResponse response = httpClient.execute(httpGet);
             HttpEntity entity = response.getEntity();
 
             if (null != entity) {
                 searchResponse = EntityUtils.toString(entity, "UTF-8");
-                System.out.println(searchResponse);
                 numTweets += 10;
-                getPicture(searchResponse, searchString, numTweets);
+                getPicture(searchResponse, searchString);
 
             }
         }
     }
 
-    private static void getPicture(String line, String hashtag, int numPictures) throws MalformedURLException {
+    private static void getPicture(String line, String hashtag) throws MalformedURLException {
         String regexURL = "https://pbs.twimg.com/media/*[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
         String regexMediaKey = "[0-9]*_[0-9]*\",\"type\":\"photo\"";
         String regexSplit = "\",\"type\":\"photo\",\"url\":\"";
@@ -91,7 +91,7 @@ public class Main {
         ArrayList<String> lineList = new ArrayList<String>();
         String[] temp;
 
-        while (urlMatcher.find() && lineList.size() < numPictures) {
+        while (urlMatcher.find() && lineList.size() < numImages) { //ensures that the total amount of pictures doesn't exceed the maximum
             lineList.add(line.substring(urlMatcher.start(0),
                     urlMatcher.end(0)));
         }
@@ -117,7 +117,6 @@ public class Main {
         if (tokenMatcher.find()) {
             next_token = line.substring(tokenMatcher.start(0), tokenMatcher.end(0));
             result = next_token.substring(14);
-            System.out.println(result);
         }
         return result;
     }
