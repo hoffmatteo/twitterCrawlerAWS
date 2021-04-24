@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.amazonaws:aws-java-sdk-prometheus:1.11.996">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/amazonaws/aws-java-sdk-prometheus/1.11.996/aws-java-sdk-prometheus-1.11.996.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/amazonaws/aws-java-sdk-prometheus/1.11.996/aws-java-sdk-prometheus-1.11.996-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/amazonaws/aws-java-sdk-prometheus/1.11.996/aws-java-sdk-prometheus-1.11.996-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
