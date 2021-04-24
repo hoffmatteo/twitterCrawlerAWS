@@ -43,13 +43,15 @@ public class Main {
         String bearerToken = "";
         //Replace the search term with a term of your choice
         search("dogs", bearerToken);
-        Timer timer = new Timer();
+        /*Timer timer = new Timer();
 
         timer.schedule(new TimerTask() {
             public void run() {
                 DeleteTimer.addHashtag();
             }
         }, 0, 60 * 1000);
+
+         */
 
         //DeleteTimer.addHashtag();
 
@@ -64,7 +66,7 @@ public class Main {
         Table table = dynamoDB.getTable("twitterimageDatabase");
 
         QuerySpec spec = new QuerySpec()
-                .withKeyConditionExpression("Id = :v_id")
+                .withKeyConditionExpression("Hashtag = :v_id")
                 .withValueMap(new ValueMap()
                         .withString(":v_id", searchString));
 

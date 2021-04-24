@@ -6,10 +6,9 @@ AWS.config.update({
 });
 
 
+
 /* GET home page. */
 router.get('/', function (req, res, next) {
-
-
 
 
   let s3 = new AWS.S3();
@@ -21,7 +20,7 @@ router.get('/', function (req, res, next) {
         S: 'dogs'
       }
     },
-    KeyConditionExpression: 'Hashtag = :s',
+    KeyConditionExpression: 'hashtag = :s',
     TableName: 'twitterimageDatabase'
   };
 
@@ -30,39 +29,51 @@ router.get('/', function (req, res, next) {
       console.log("Error", err);
     } else {
       //console.log("Success", data.Items);
-      data.Items.forEach(function (element, index, array) {
-        console.log(element);
-        displayImage(element);
-      });
-      displayImage(data.Items)
+      data.Items.forEach(function (element, index, array) {});
+      parseImage(data.Items);
     }
   });
 
-  function displayImage(items) {
-
+  function parseImage(items) {
+    var curr_data = [];
+    items.forEach(function (element, index, array) {
+      console.log(element.media_key.S);
+      getImage(element.media_key.S).then((img) => {
+        curr_data.push(img);
+        if (curr_data.length == items.length) {
+          displayImages(curr_data);
+        }
+      })
+    })
   }
 
   async function getImage(media_key) {
     const data = s3.getObject({
         Bucket: 'twitterimagesoth',
-        Key: 'dogs/3_1384456328576311299'
+        Key: media_key
       }
 
     ).promise();
     return data;
   }
 
-  getImage()
-    .then((img) => {
-      let image = "<img src='data:image/jpeg;base64," + encode(img.Body) + "'" + "/>";
-      let startHTML = "<html><body></body>";
-      let endHTML = "</body></html>";
-      let html = startHTML + image + endHTML;
-      res.send(html);
-      console.log(htlm);
-    }).catch((e) => {
-      res.send(e);
+  function displayImages(images) {
+    let imageHTML = "";
+    var imgs = [];
+    images.forEach(function (element, index, array) {
+      let image = "<img src='data:image/jpeg;base64," + encode(element.Body) + "'" + "/>";
+      imgs.push(encode(element.Body));
     })
+    let startHTML = "<html><body></body>";
+    let endHTML = "</body></html>";
+    let html = startHTML + imageHTML + endHTML;
+    console.log(imgs[0]);
+
+    res.render('layout', {
+      //show_polls: polls 
+      images: imgs
+    });
+  }
 
   function encode(data) {
     let buf = Buffer.from(data);

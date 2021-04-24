@@ -76,8 +76,7 @@ class BucketAccess {
 
     private static void addToDynamo(String hashtag, String media_key) {
         Table table = dynamoDB.getTable("twitterimageDatabase");
-        Item item = new Item().withPrimaryKey("Hashtag", hashtag).withString("S3 Storage", "S3://" + hashtag + "/" + media_key).withString("Delete Time", Long.toString(System.currentTimeMillis() / 1000L) + 3);
-
+        Item item = new Item().withPrimaryKey("hashtag", hashtag).withString("media_key", hashtag + "/" + media_key).withString("delete_time", Long.toString(System.currentTimeMillis() / 1000L) + 86400);
         table.putItem(item);
 
     }
