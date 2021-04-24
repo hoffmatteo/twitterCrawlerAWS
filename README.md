@@ -11,10 +11,10 @@ The crawler should interact with multiple AWS Services and the crawling/download
 - DynamoDB
 - S3
 - SQS
-- Auto Scaling TODO
-- Amplify Console TODO
+- Auto Scaling
+- Cloudwatch
 
 # Modules:
 - Twitter Crawler (Java)
 - Image Downloader (Java)
-- Front End (?)
+- Front End (NodeJS)
