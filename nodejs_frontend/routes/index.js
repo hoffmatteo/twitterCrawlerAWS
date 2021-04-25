@@ -5,26 +5,25 @@ AWS.config.update({
   region: 'eu-central-1'
 });
 
-/* GET users listing. */
+/* GET index page. */
 router.get('/', function (req, res, next) {
-  //res.render('error');
   res.render('index');
 });
 
+/* gets called when form is submitted. */
 router.post('/', function (req, res, next) {
+  //init dynamoDB and SQS Queue
   var sqs = new AWS.SQS();
   var ddb = new AWS.DynamoDB();
 
-
-
+  //reads values from submitted form
   var hashtag = req.body.hashtag_field;
   var amount = req.body.amount_field;
 
-  console.log(amount);
+  //Parameters are set and Message(body is the hashtag, amount is Attribute) is sent
   var paramsSQS = {
-    // Remove DelaySeconds parameter and value for FIFO queues
     MessageAttributes: {
-      "Amount": {
+      "amount": {
         DataType: "Number",
         StringValue: amount
       }
@@ -52,14 +51,15 @@ router.post('/', function (req, res, next) {
     TableName: 'twitterimageDatabase'
   };
 
-
+  //redirect to the results page once enough images are available
   checkFinished().then((finished) => {
     res.redirect(307, '/results');
   })
 
 
 
-
+  /* This method uses promises to check the dynamoDB every 2 seconds. 
+  If there are enough entries for the requested amount, the method finishes. */
   async function checkFinished() {
     var finished = false;
     while (!finished) {
@@ -79,6 +79,7 @@ router.post('/', function (req, res, next) {
   }
 })
 
+/* Helper Function */
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);

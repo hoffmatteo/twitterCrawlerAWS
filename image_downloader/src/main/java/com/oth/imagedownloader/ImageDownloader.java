@@ -24,9 +24,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-class BucketAccess {
+/*
+ * This class waits for messages containing images and then downloads them.
+ * */
+class ImageDownloader {
+    //temporary file needed for download
     private static final String PREFIX = "tempfile";
     private static final String SUFFIX = ".jpg";
+
+    //Inits for AWS services
     private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
     private static final DynamoDB dynamoDB = new DynamoDB(client);
 
@@ -38,8 +44,11 @@ class BucketAccess {
         checkQueue();
     }
 
-
-    static void upload(ArrayList<String> urlList, ArrayList<String> mediaKeyList, String hashtag) {
+    /*
+     * This method uploads an image to the S3 Bucket.
+     * In order to do this it temporarily saves the image from the twitter url.
+     * */
+    private static void upload(ArrayList<String> urlList, ArrayList<String> mediaKeyList, String hashtag) {
         String bucket_name = "twitterimagesoth";
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().build();
@@ -55,8 +64,8 @@ class BucketAccess {
                 }
                 try {
                     PutObjectResult result = s3.putObject(bucket_name, hashtag + "/" + mediaKeyList.get(i), tempFile);
-                    //insert hashtag/image2 into dynamodb as value
 
+                    //insert hashtag/image2 into dynamodb as value
                     addToDynamo(hashtag, mediaKeyList.get(i));
 
                     if (!tempFile.delete()) {
@@ -74,6 +83,13 @@ class BucketAccess {
         }
     }
 
+    /*
+     * This method inserts an image into the dynamoDB.
+     * An entry has the following structure:
+     *      Primary partition key:  hashtag, e.g "cats"
+     *      Primary sort key:       media key, e.g "3_1386383725894815749"
+     *      Time to live:           Time after which the entry gets deleted, currently 24 hours
+     * */
     private static void addToDynamo(String hashtag, String media_key) {
         Table table = dynamoDB.getTable("twitterimageDatabase");
         Item item = new Item().withPrimaryKey("hashtag", hashtag).withString("media_key", hashtag + "/" + media_key).withString("delete_time", Long.toString(System.currentTimeMillis() / 1000L) + 86400);
@@ -81,7 +97,15 @@ class BucketAccess {
 
     }
 
-    public static void checkQueue() {
+    /*
+     * This method waits until a new message is sent to the image queue by the twitter_crawler.
+     * The messages have the following structure:
+     * Body: URL, e.g https://pbs.twimg.com/media/Ez1sp0BX0AUpb3b.jpg
+     * Attributes:
+     *      curr_hashtag, e.g cats
+     *      media_key, e.g 3_1386383725894815749
+     * */
+    private static void checkQueue() {
         while (true) {
             try {
                 ReceiveMessageRequest messageRequest = new ReceiveMessageRequest().withMessageAttributeNames("media_key", "curr_hashtag").withQueueUrl(queue_url).withWaitTimeSeconds(20);
