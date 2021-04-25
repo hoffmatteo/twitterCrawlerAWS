@@ -5,81 +5,85 @@ AWS.config.update({
   region: 'eu-central-1'
 });
 
-
-
-/* GET home page. */
+/* GET users listing. */
 router.get('/', function (req, res, next) {
+  //res.render('error');
+  res.render('index');
+});
 
-
-  let s3 = new AWS.S3();
+router.post('/', function (req, res, next) {
+  var sqs = new AWS.SQS();
   var ddb = new AWS.DynamoDB();
 
-  var params = {
+
+
+  var hashtag = req.body.hashtag_field;
+  var amount = req.body.amount_field;
+
+  console.log(amount);
+  var paramsSQS = {
+    // Remove DelaySeconds parameter and value for FIFO queues
+    MessageAttributes: {
+      "Amount": {
+        DataType: "Number",
+        StringValue: amount
+      }
+    },
+    MessageBody: hashtag,
+    MessageGroupId: "hashtag", // Required for FIFO queues
+    QueueUrl: "https://sqs.eu-central-1.amazonaws.com/853007416067/HashtagQueue.fifo"
+  };
+
+  sqs.sendMessage(paramsSQS, function (err, data) {
+    if (err) {
+      console.log("Error", err);
+    } else {
+      console.log("Success", data.MessageId);
+    }
+  });
+
+  var paramsDynamo = {
     ExpressionAttributeValues: {
       ':s': {
-        S: 'dogs'
+        S: hashtag
       }
     },
     KeyConditionExpression: 'hashtag = :s',
     TableName: 'twitterimageDatabase'
   };
 
-  ddb.query(params, function (err, data) {
-    if (err) {
-      console.log("Error", err);
-    } else {
-      //console.log("Success", data.Items);
-      data.Items.forEach(function (element, index, array) {});
-      parseImage(data.Items);
-    }
-  });
 
-  function parseImage(items) {
-    var curr_data = [];
-    items.forEach(function (element, index, array) {
-      console.log(element.media_key.S);
-      getImage(element.media_key.S).then((img) => {
-        curr_data.push(img);
-        if (curr_data.length == items.length) {
-          displayImages(curr_data);
+  checkFinished().then((finished) => {
+    res.redirect(307, '/results');
+  })
+
+
+
+
+  async function checkFinished() {
+    var finished = false;
+    while (!finished) {
+      ddb.query(paramsDynamo, function (err, data) {
+        if (err) {
+          console.log("Error", err);
+        } else {
+          console.log("dynamo length: " + data.Items.length);
+          if (data.Items.length >= amount) {
+            finished = true;
+            return;
+          }
         }
-      })
-    })
+      });
+      await sleep(2000);
+    }
   }
+})
 
-  async function getImage(media_key) {
-    const data = s3.getObject({
-        Bucket: 'twitterimagesoth',
-        Key: media_key
-      }
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
-    ).promise();
-    return data;
-  }
-
-  function displayImages(images) {
-    let imageHTML = "";
-    var imgs = [];
-    images.forEach(function (element, index, array) {
-      let image = "<img src='data:image/jpeg;base64," + encode(element.Body) + "'" + "/>";
-      imgs.push(encode(element.Body));
-    })
-    let startHTML = "<html><body></body>";
-    let endHTML = "</body></html>";
-    let html = startHTML + imageHTML + endHTML;
-    console.log(imgs[0]);
-
-    res.render('layout', {
-      //show_polls: polls 
-      images: imgs
-    });
-  }
-
-  function encode(data) {
-    let buf = Buffer.from(data);
-    let base64 = buf.toString('base64');
-    return base64
-  }
-});
 
 module.exports = router;
