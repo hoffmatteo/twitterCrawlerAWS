@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 public class Main {
     //Max number of images that can be requested in one batch
     private static final int maxNumImages = 100;
+    private static int bucketSize = 0;
 
 
     //Initializes the specific AWS services
@@ -53,8 +54,6 @@ public class Main {
 
     public static void main(String[] args) {
         checkQueue();
-
-
     }
 
     /*
@@ -65,53 +64,58 @@ public class Main {
         int numTweets = 0;
         Table table = dynamoDB.getTable("twitterimageDatabase");
 
-        //checks DynamoDB whether any pictures are still saved
-        int persistedLength = checkSavedPictures(searchString, table);
-        System.out.println("found " + persistedLength + " already saved pictures!");
+        //cap for total images downloaded
+        if (bucketSize + amount <= 1000) {
+            bucketSize += amount;
 
-        //only download new pictures if the saved ones are not enough to satisfy request
-        int numNewTweets = amount - persistedLength;
+            //checks DynamoDB whether any pictures are still saved
+            int persistedLength = checkSavedPictures(searchString, table);
+            System.out.println("found " + persistedLength + " already saved pictures!");
 
-        //Twitter only allows up to 100 tweets per batch, if more are requested you need multiple batches
-        while (numTweets < numNewTweets) {
+            //only download new pictures if the saved ones are not enough to satisfy request
+            int numNewTweets = amount - persistedLength;
 
-            HttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(RequestConfig.custom()
-                    .setCookieSpec(CookieSpecs.STANDARD).build())
-                    .build();
+            //Twitter only allows up to 100 tweets per batch, if more are requested you need multiple batches
+            while (numTweets < numNewTweets) {
 
-            URIBuilder uriBuilder = new URIBuilder("https://api.twitter.com/2/tweets/search/recent");
-            ArrayList<NameValuePair> queryParameters;
+                HttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(RequestConfig.custom()
+                        .setCookieSpec(CookieSpecs.STANDARD).build())
+                        .build();
 
-            //Query Parameters for the Twitter API, defines the search term, restrictions and expansions (for more information)
-            queryParameters = new ArrayList<>();
-            queryParameters.add(new BasicNameValuePair("query", "#" + searchString + " has:images -is:retweet -is:quote"));
-            queryParameters.add(new BasicNameValuePair("expansions", "attachments.media_keys"));
-            queryParameters.add(new BasicNameValuePair("media.fields", "url"));
-            //If more than 100 are requested, only request 100 and then wait for the next batch, otherwise search for the given amount
-            if (numNewTweets - numTweets > 100) {
-                queryParameters.add(new BasicNameValuePair("max_results", Integer.toString(maxNumImages)));
-            } else {
-                queryParameters.add(new BasicNameValuePair("max_results", Integer.toString(numNewTweets - numTweets)));
-            }
+                URIBuilder uriBuilder = new URIBuilder("https://api.twitter.com/2/tweets/search/recent");
+                ArrayList<NameValuePair> queryParameters;
 
-            //Twitter batches are identified by tokens
-            if (numTweets != 0) {
-                queryParameters.add(new BasicNameValuePair("next_token", getNextToken(searchResponse)));
+                //Query Parameters for the Twitter API, defines the search term, restrictions and expansions (for more information)
+                queryParameters = new ArrayList<>();
+                queryParameters.add(new BasicNameValuePair("query", "#" + searchString + " has:images -is:retweet -is:quote"));
+                queryParameters.add(new BasicNameValuePair("expansions", "attachments.media_keys"));
+                queryParameters.add(new BasicNameValuePair("media.fields", "url"));
+                //If more than 100 are requested, only request 100 and then wait for the next batch, otherwise search for the given amount
+                if (numNewTweets - numTweets > 100) {
+                    queryParameters.add(new BasicNameValuePair("max_results", Integer.toString(maxNumImages)));
+                } else {
+                    queryParameters.add(new BasicNameValuePair("max_results", Integer.toString(numNewTweets - numTweets)));
+                }
 
-            }
-            uriBuilder.addParameters(queryParameters);
+                //Twitter batches are identified by tokens
+                if (numTweets != 0) {
+                    queryParameters.add(new BasicNameValuePair("next_token", getNextToken(searchResponse)));
 
-            HttpGet httpGet = new HttpGet(uriBuilder.build());
-            httpGet.setHeader("Authorization", String.format("Bearer %s", bearerToken));
-            httpGet.setHeader("Content-Type", "application/json");
+                }
+                uriBuilder.addParameters(queryParameters);
 
-            HttpResponse response = httpClient.execute(httpGet);
-            HttpEntity entity = response.getEntity();
+                HttpGet httpGet = new HttpGet(uriBuilder.build());
+                httpGet.setHeader("Authorization", String.format("Bearer %s", bearerToken));
+                httpGet.setHeader("Content-Type", "application/json");
 
-            if (null != entity) {
-                searchResponse = EntityUtils.toString(entity, "UTF-8");
-                numTweets += getPicture(searchResponse, searchString, numNewTweets - numTweets);
+                HttpResponse response = httpClient.execute(httpGet);
+                HttpEntity entity = response.getEntity();
 
+                if (null != entity) {
+                    searchResponse = EntityUtils.toString(entity, "UTF-8");
+                    numTweets += getPicture(searchResponse, searchString, numNewTweets - numTweets);
+
+                }
             }
         }
     }

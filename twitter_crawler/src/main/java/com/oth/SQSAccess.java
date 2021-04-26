@@ -9,7 +9,7 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
  * This class provides easy access to the Image SQS Queue.
  * */
 public class SQSAccess {
-    private static final String QUEUE_NAME = "TestQueue.fifo";
+    private static final String QUEUE_NAME = "ImageQueue.fifo";
     private static final AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
     private static final String queue_url = sqs.getQueueUrl(QUEUE_NAME).getQueueUrl();
 

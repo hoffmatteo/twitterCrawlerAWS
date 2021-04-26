@@ -36,7 +36,7 @@ class ImageDownloader {
     private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
     private static final DynamoDB dynamoDB = new DynamoDB(client);
 
-    private static final String QUEUE_NAME = "TestQueue.fifo";
+    private static final String QUEUE_NAME = "ImageQueue.fifo";
     private static final AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
     private static final String queue_url = sqs.getQueueUrl(QUEUE_NAME).getQueueUrl();
 

@@ -36,15 +36,15 @@ router.post('/', function (req, res, next) {
   });
 
 
-
+  /*Helper Function*/
   function encode(data) {
     let buf = Buffer.from(data);
     let base64 = buf.toString('base64');
     return base64
   }
 
-  //parseImage is responsible for calling getImage for every dynamoDB entry.
-  //If every entry has been called and returned, then displayImages is called.
+  /*parseImage is responsible for calling getImage for every dynamoDB entry.
+  If every entry has been called and returned, then displayImages is called.*/
   function parseImage(items) {
     var curr_data = [];
     items.forEach(function (element, index, array) {
@@ -58,7 +58,7 @@ router.post('/', function (req, res, next) {
     })
   }
 
-  //getImage accesses the S3 Bucket asynchronously, and gets a single image by its media_key
+  /*getImage accesses the S3 Bucket asynchronously, and gets a single image by its media_key*/
   async function getImage(media_key) {
     const data = s3.getObject({
         Bucket: 'twitterimagesoth',
@@ -69,7 +69,7 @@ router.post('/', function (req, res, next) {
     return data;
   }
 
-  //displayImages formats the images into an array that is then given to the rendered hbs page
+  /*displayImages formats the images into an array that is then given to the rendered hbs page*/
   function displayImages(images) {
     var imgs = [];
     images.forEach(function (element, index, array) {

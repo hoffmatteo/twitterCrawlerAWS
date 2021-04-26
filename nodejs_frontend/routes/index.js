@@ -53,15 +53,24 @@ router.post('/', function (req, res, next) {
 
   //redirect to the results page once enough images are available
   checkFinished().then((finished) => {
-    res.redirect(307, '/results');
+    if (finished) {
+      res.redirect(307, '/results');
+    } else {
+      res.render('index', {
+        error: "Failed to load images"
+      });
+    }
+
   })
 
 
 
   /* This method uses promises to check the dynamoDB every 2 seconds. 
-  If there are enough entries for the requested amount, the method finishes. */
+  If there are enough entries for the requested amount, the method finishes.
+  After 10 minutes it times out and returns false. */
   async function checkFinished() {
     var finished = false;
+    var currTime = 0;
     while (!finished) {
       ddb.query(paramsDynamo, function (err, data) {
         if (err) {
@@ -70,12 +79,16 @@ router.post('/', function (req, res, next) {
           console.log("dynamo length: " + data.Items.length);
           if (data.Items.length >= amount) {
             finished = true;
-            return;
           }
         }
       });
+      currTime += 2000;
+      if (currTime > 600000) {
+        return false;
+      }
       await sleep(2000);
     }
+    return true;
   }
 })
 
