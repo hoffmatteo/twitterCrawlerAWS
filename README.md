@@ -18,3 +18,7 @@ The crawler should interact with multiple AWS Services and the crawling/download
 - Twitter Crawler (Java)
 - Image Downloader (Java)
 - Front End (NodeJS)
+
+# Possible Next steps:
+- Use Lambda Function for Twitter Crawler
+- Use Amplify for Website
